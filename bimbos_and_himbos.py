@@ -18,8 +18,8 @@ from sims.sim_info import SimInfo
 from sims.sim_info_types import Age, Gender, Species
 from sims.sim_spawner import SimSpawner
 
-import sims4.commands
 import services
+import sims4
 
 
 class Wrapper:
@@ -55,45 +55,72 @@ class Wrapper:
 # sliders and variables
 slider_sets = [
     {
-    # feminine frame
-        15575175292544645782: 1.0,    # belly (low)
-        11930680302218363414: 1.0,    # butt (high)
-        7507470142880626878: 0.5,    # feet (low)
-        5374208749069135862: 0.2,    # hips (high)
-        3133421862343476390: 0.5,    # lower arms (high)
-        8990366144061439592: 0.37,    # lower legs (high)
-        14190157834369024263: 1.0,    # neck (low)
-        8261922974690070905: 0.6,    # shoulder (low)
-        2691083872543754775: 0.5,    # upper arms (high)
-        7928916107912367106: 1.0,    # upper legs (high)
-        14010151319568370160: 1.0    # waist (low)
+    # feminine frame with breasts
+        10160417097015316330: 1.0,
+        10172784403806973628: 1.0,
+        11930680302218363414: 1.0,
+        14010151319568370160: 1.0,
+        14190157834369024263: 1.0,
+        15575175292544645782: 1.0,
+        2691083872543754775: 0.5,
+        3133421862343476390: 0.5,
+        5374208749069135862: 0.2,
+        6248723735190925703: 1.0,
+        7507470142880626878: 0.5,
+        7928916107912367106: 1.0,
+        8261922974690070905: 0.6,
+        8990366144061439592: 0.37
     },
     {
-    # feminine frame breast sliders
-        10172784403806973628: 1.0,    # chestdepth (high)
-        6248723735190925703: 1.0,    # chestlift (low)
-        10160417097015316330: 1.0,    # chestsize (high)
+    # feminine frame without breasts
+        10172784403806973628: 1.0,
+        11930680302218363414: 1.0,
+        1305153429805576266: 1.0,
+        14010151319568370160: 1.0,
+        14190157834369024263: 1.0,
+        15575175292544645782: 1.0,
+        2691083872543754775: 0.5,
+        3133421862343476390: 0.5,
+        5374208749069135862: 0.2,
+        7507470142880626878: 0.5,
+        7928916107912367106: 1.0,
+        8261922974690070905: 0.6,
+        8990366144061439592: 0.37
     },
     {
-    # masculine frame
-        8990366144061439592: 0.01,
-        16892734955963417493: 0.01,
-        1305153429805576266: 0.217,
-        12410017839419515581: 1.0,
-        1701565032762897701: 0.783,
-        712054970721619767: 0.04,
+    # masculine frame with breasts
+        10160417097015316330: 1.0,
         10981293205619467162: 0.342,
-        3153939009691209395: 0.124,
+        12410017839419515581: 1.0,
+        12742648587447422229: 0.113,
+        1305153429805576266: 0.217,
         1554888732433422503: 0.5,
         1670192638776885870: 0.56,
-        5941347650567105741: 0.42,
-        6468277340439150134: 0.033,
-        12742648587447422229: 0.113
+        16892734955963417493: 0.01,
+        1701565032762897701: 0.783,
+        17857088923822951672: 0.524,
+        3153939009691209395: 0.124,
+        3999837669087888828: 1.0,
+        5941347650567105741: 1.0,
+        712054970721619767: 0.04,
+        8990366144061439592: 0.01
     },
     {
-    # masculine frame breast sliders
-        3999837669087888828: 1.0,
-        10160417097015316330: 1.0
+    # masculine frame without breasts
+        10981293205619467162: 0.342,
+        12410017839419515581: 1.0,
+        12742648587447422229: 0.113,
+        1305153429805576266: 0.217,
+        1554888732433422503: 0.5,
+        1670192638776885870: 0.56,
+        16892734955963417493: 0.01,
+        1701565032762897701: 0.783,
+        17857088923822951672: 0.524,
+        3153939009691209395: 0.124,
+        5941347650567105741: 1.0,
+        6468277340439150134: 0.033,
+        712054970721619767: 0.04,
+        8990366144061439592: 0.01
     }
 ]
 
@@ -127,19 +154,17 @@ def bh_helper(sim_info: SimInfo) -> bool:
     if sim_info.species != Species.HUMAN or sim_info.age <= Age.CHILD:
         return False
     trait_manager = services.get_instance_manager(sims4.resources.Types.TRAIT)
-    trait_feminine_frame = trait_manager.get(136878)
     trait_masculine_frame = trait_manager.get(136877)
     trait_breasts_on = trait_manager.get(136863)
     trait_breasts_off = trait_manager.get(136862)
     to_set = dict()
-    if sim_info.has_trait(trait_feminine_frame):
-        base_slider_set = 0
-    elif sim_info.has_trait(trait_masculine_frame):
+    base_slider_set = 0
+    if sim_info.has_trait(trait_masculine_frame):
         base_slider_set = 2
+    if (sim_info.gender == Gender.MALE and not sim_info.has_trait(trait_breasts_on)) or (
+            sim_info.gender == Gender.FEMALE and sim_info.has_trait(trait_breasts_off)):
+        base_slider_set += 1
     to_set.update(slider_sets[base_slider_set])
-    if (sim_info.gender == Gender.MALE and sim_info.has_trait(trait_breasts_on)) or (
-            sim_info.gender == Gender.FEMALE and not sim_info.has_trait(trait_breasts_off)):
-        to_set.update(slider_sets[base_slider_set + 1])
     facial_attributes = PersistenceBlobs_pb2.BlobSimFacialCustomizationData()
     facial_attributes.ParseFromString(sim_info.facial_attributes)
     if bh_set_attributes(facial_attributes, to_set):
@@ -152,7 +177,7 @@ def bh_helper(sim_info: SimInfo) -> bool:
 #####
 # bh injections
 @Wrapper.wrap(SimSpawner, SimSpawner.spawn_sim.__name__)
-def bH_on_spawned(original, cls, sim_info, *args, **kwargs) -> Any:
+def bh_on_spawned(original, cls, sim_info, *args, **kwargs) -> Any:
     result = original(sim_info, *args, **kwargs)
     if result:
         bh_helper(sim_info)
